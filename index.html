@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Habit Garden</title>
+<style>
+  :root {
+    --bg: #ffffff; --card: #faf7f3; --ink: #37352f; --muted: #8a857d; --line: #ece6de;
+    --h0: #efebe6; --h1: #d9e6cf; --h2: #b2cfa2; --h3: #82b075; --h4: #4f8a4b;
+    --xp-a: #f2b58c; --xp-b: #d98aa0; --chip: #f1ece5; --chip-on: #37352f; --chip-on-ink: #fff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #191919; --card: #202020; --ink: #e9e6e1; --muted: #9b968e; --line: #2f2d2a;
+      --h0: #2a2826; --h1: #34462e; --h2: #4a6b3e; --h3: #679a54; --h4: #93cc78;
+      --chip: #2a2826; --chip-on: #e9e6e1; --chip-on-ink: #191919;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #191919; --card: #202020; --ink: #e9e6e1; --muted: #9b968e; --line: #2f2d2a;
+    --h0: #2a2826; --h1: #34462e; --h2: #4a6b3e; --h3: #679a54; --h4: #93cc78;
+    --chip: #2a2826; --chip-on: #e9e6e1; --chip-on-ink: #191919;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.4 ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .top { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+  .badge { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--xp-a), var(--xp-b)); color: #fff; font-weight: 700; font-size: 22px;
+    box-shadow: 0 4px 14px rgba(217, 138, 160, .35); }
+  .title { font-weight: 650; font-size: 15px; }
+  .sub { color: var(--muted); font-size: 12px; }
+  .bar { height: 9px; background: var(--h0); border-radius: 99px; overflow: hidden; margin: 7px 0 3px; }
+  .bar i { display: block; height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--xp-a), var(--xp-b)); transition: width .8s ease; }
+  .stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .stat { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 7px 11px; }
+  .stat b { font-size: 16px; }
+  .msg { margin-top: 10px; font-size: 13px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 14px 0 10px; }
+  .chip { border: 0; background: var(--chip); color: var(--ink); border-radius: 99px; padding: 6px 12px;
+    font: inherit; font-size: 12.5px; cursor: pointer; }
+  .chip[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-ink); }
+  .spacer { flex: 1; }
+  .nav { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .nav button { border: 0; background: var(--chip); color: var(--ink); border-radius: 8px; width: 30px; height: 28px; cursor: pointer; font-size: 15px; }
+  .nav span { font-weight: 600; min-width: 130px; text-align: center; }
+  /* month */
+  .month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; max-width: 420px; }
+  .dow { color: var(--muted); font-size: 11px; text-align: center; }
+  .mcell { aspect-ratio: 1; border-radius: 8px; background: var(--h0); font-size: 11px; display: flex;
+    align-items: flex-start; justify-content: flex-end; padding: 4px 6px; color: var(--muted); cursor: pointer; }
+  .mcell.l3, .mcell.l4 { color: #fff; }
+  .mcell.today { outline: 2px solid var(--xp-b); outline-offset: 1px; }
+  .mcell.blank { background: transparent; cursor: default; }
+  /* year */
+  .yscroll { overflow-x: auto; padding-bottom: 4px; }
+  .year { display: grid; grid-auto-flow: column; grid-template-rows: 14px repeat(7, 12px); gap: 3px; width: max-content; }
+  .ycell { width: 12px; height: 12px; border-radius: 3px; background: var(--h0); cursor: pointer; }
+  .ycell.future { opacity: .35; cursor: default; }
+  .ycell.today { outline: 1.5px solid var(--xp-b); }
+  .mlabel { font-size: 10px; color: var(--muted); white-space: nowrap; height: 14px; }
+  .l1 { background: var(--h1) } .l2 { background: var(--h2) } .l3 { background: var(--h3) } .l4 { background: var(--h4) }
+  .legend { display: flex; gap: 3px; align-items: center; color: var(--muted); font-size: 11px; margin-top: 10px; }
+  .legend .ycell { cursor: default; }
+  .detail { min-height: 20px; margin-top: 8px; font-size: 12.5px; color: var(--muted); }
+  .levelup { animation: pop .6s ease; }
+  @keyframes pop { 50% { transform: scale(1.15); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" id="hero" hidden>
+    <div class="top">
+      <div class="badge" id="lvl">1</div>
+      <div>
+        <div class="title" id="rank"></div>
+        <div class="bar"><i id="xpbar" style="width:0"></i></div>
+        <div class="sub" id="xptext"></div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="controls" id="controls"></div>
+  <div class="nav" id="nav"><button id="prev" aria-label="Previous">‹</button><span id="period"></span><button id="next" aria-label="Next">›</button></div>
+  <div id="grid"></div>
+  <div class="legend">less <i class="ycell"></i><i class="ycell l1"></i><i class="ycell l2"></i><i class="ycell l3"></i><i class="ycell l4"></i> more</div>
+  <div class="detail" id="detail">Tap a day to see what you did.</div>
+</div>
+
+<script>
+const q = new URLSearchParams(location.search);
+if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme");
+const state = { view: q.get("view") || "month", habit: q.get("habit") || "all", offset: 0 };
+const compact = q.get("compact") === "1"; // hide the XP card, e.g. for a second embed
+
+const RANKS = ["Seed", "Sprout", "Seedling", "Bud", "Bloom", "Blossom", "Meadow", "Grove", "Orchard", "Forest", "Wildwood", "Evergreen"];
+const RANK_ICONS = ["🌰", "🌱", "🌿", "🌷", "🌸", "💐", "🌼", "🌳", "🍑", "🌲", "🍃", "✨"];
+
+const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const today = new Date(); today.setHours(0, 0, 0, 0);
+const TODAY = iso(today);
+
+function game(data) {
+  const habits = data.good.habits, days = data.good.days;
+  const active = (k) => (days[k] || []).length > 0;
+  const keys = Object.keys(days).filter((k) => k <= TODAY).sort();
+  let xp = 0, run = 0, best = 0, gap = 0, prev = null;
+  const milestones = { 3: 30, 7: 70, 14: 140, 30: 300 };
+  if (keys.length) {
+    for (let d = new Date(keys[0] + "T00:00"); iso(d) <= TODAY; d = addDays(d, 1)) {
+      const k = iso(d), done = (days[k] || []).length;
+      if (done) {
+        xp += done * 10;
+        if (done === habits.length) xp += 25;           // perfect day
+        if (gap >= 3 && prev) xp += 30;                  // comeback bonus
+        run += 1; gap = 0; prev = k;
+        if (milestones[run]) xp += milestones[run];
+        best = Math.max(best, run);
+      } else if (k !== TODAY) { run = 0; gap += 1; }     // today isn't over yet
+    }
+  }
+  // Level L -> L+1 costs 100 + 50*(L-1) XP. XP and levels never go down.
+  let level = 1, need = 100, into = xp;
+  while (into >= need) { into -= need; level += 1; need = 100 + 50 * (level - 1); }
+  const lastActive = [...keys].reverse().find(active);
+  const away = lastActive ? Math.round((today - new Date(lastActive + "T00:00")) / 864e5) : null;
+  const month = keys.filter((k) => k.startsWith(TODAY.slice(0, 7)) && active(k)).length;
+  return { xp, level, into, need, streak: run, best, away, month, todayDone: (days[TODAY] || []).length, total: habits.length };
+}
+
+function renderHero(g) {
+  const i = Math.min(g.level - 1, RANKS.length - 1);
+  document.getElementById("lvl").textContent = g.level;
+  document.getElementById("rank").textContent = `${RANK_ICONS[i]} Level ${g.level} · ${RANKS[i]}`;
+  document.getElementById("xptext").textContent = `${g.into} / ${g.need} XP to level ${g.level + 1} · ${g.xp} XP total`;
+  requestAnimationFrame(() => (document.getElementById("xpbar").style.width = `${(100 * g.into) / g.need}%`));
+  document.getElementById("stats").innerHTML = [
+    ["🔥", g.streak, "day streak"], ["🏆", g.best, "best streak"],
+    ["✅", `${g.todayDone}/${g.total}`, "today"], ["🌿", g.month, "active days this month"],
+  ].map(([e, v, t]) => `<div class="stat">${e} <b>${v}</b> <span class="sub">${t}</span></div>`).join("");
+  let msg;
+  if (g.away === null) msg = "🌱 Tick your first habit in Notion — your garden starts growing.";
+  else if (g.away >= 3) msg = `🌿 Welcome back. Your ${g.xp} XP is safe. One tick today = +30 comeback bonus.`;
+  else if (g.todayDone === g.total) msg = "✨ Perfect day. +25 bonus banked.";
+  else if (g.streak > 0) msg = `🔥 ${g.streak}-day streak. One tick keeps it alive.`;
+  else msg = "🌸 Fresh start — one tick today starts a new streak.";
+  document.getElementById("msg").textContent = msg;
+  document.getElementById("hero").hidden = compact;
+}
+
+function level(data, k) {
+  const done = data.good.days[k] || [];
+  if (state.habit !== "all") return done.includes(state.habit) ? 4 : 0;
+  if (!done.length) return 0;
+  return Math.max(1, Math.ceil((4 * done.length) / data.good.habits.length));
+}
+
+function showDetail(data, k) {
+  const done = data.good.days[k] || [];
+  const label = new Date(k + "T00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  document.getElementById("detail").textContent = done.length
+    ? `${label} · ${done.length}/${data.good.habits.length} · ${done.join(", ")}`
+    : `${label} · rest day`;
+}
+
+function renderMonth(data) {
+  const first = new Date(today.getFullYear(), today.getMonth() + state.offset, 1);
+  document.getElementById("period").textContent = first.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const lead = (first.getDay() + 6) % 7; // Monday first
+  const len = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  let html = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => `<div class="dow">${d}</div>`).join("");
+  html += '<div class="mcell blank"></div>'.repeat(lead);
+  for (let n = 1; n <= len; n++) {
+    const k = iso(new Date(first.getFullYear(), first.getMonth(), n));
+    html += `<div class="mcell l${level(data, k)}${k === TODAY ? " today" : ""}" data-k="${k}">${n}</div>`;
+  }
+  return `<div class="month">${html}</div>`;
+}
+
+function renderYear(data) {
+  const end = addDays(today, (7 - ((today.getDay() + 6) % 7) - 1) + 7 * 52 * state.offset); // Sunday of target week
+  const start = addDays(end, -7 * 53 + 1);
+  document.getElementById("period").textContent =
+    `${start.toLocaleDateString("en-GB", { month: "short", year: "numeric" })} – ${end.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`;
+  let html = "", lastMonth = -1;
+  for (let w = 0; w < 53; w++) {
+    const wk = addDays(start, w * 7);
+    const m = addDays(wk, 6).getMonth();
+    html += `<div class="mlabel">${m !== lastMonth ? addDays(wk, 6).toLocaleDateString("en-GB", { month: "short" }) : ""}</div>`;
+    lastMonth = m;
+    for (let d = 0; d < 7; d++) {
+      const day = addDays(wk, d), k = iso(day);
+      const cls = k > TODAY ? " future" : ` l${level(data, k)}`;
+      html += `<div class="ycell${cls}${k === TODAY ? " today" : ""}" data-k="${k}"></div>`;
+    }
+  }
+  return `<div class="yscroll"><div class="year">${html}</div></div>`;
+}
+
+function render(data) {
+  const c = document.getElementById("controls");
+  const chip = (label, on, attr) => `<button class="chip" aria-pressed="${on}" ${attr}>${label}</button>`;
+  c.innerHTML =
+    chip("Month", state.view === "month", 'data-view="month"') + chip("Year", state.view === "year", 'data-view="year"') +
+    '<span class="spacer"></span>' +
+    chip("All habits", state.habit === "all", 'data-habit="all"') +
+    data.good.habits.map((h) => chip(h, state.habit === h, `data-habit="${h.replace(/"/g, "&quot;")}"`)).join("");
+  const grid = document.getElementById("grid");
+  grid.innerHTML = state.view === "month" ? renderMonth(data) : renderYear(data);
+  document.getElementById("next").disabled = state.offset >= 0;
+  const sc = grid.querySelector(".yscroll");
+  if (sc) sc.scrollLeft = sc.scrollWidth;
+}
+
+fetch(`data.json?t=${Date.now()}`).then((r) => r.json()).then((data) => {
+  renderHero(game(data));
+  render(data);
+  document.body.addEventListener("click", (e) => {
+    const t = e.target.closest("[data-view],[data-habit],[data-k]");
+    if (e.target.id === "prev") { state.offset -= 1; render(data); return; }
+    if (e.target.id === "next") { state.offset = Math.min(0, state.offset + 1); render(data); return; }
+    if (!t) return;
+    if (t.dataset.view) { state.view = t.dataset.view; state.offset = 0; render(data); }
+    else if (t.dataset.habit) { state.habit = t.dataset.habit; render(data); }
+    else if (t.dataset.k && !t.classList.contains("future")) showDetail(data, t.dataset.k);
+  });
+}).catch(() => {
+  document.getElementById("detail").textContent = "Couldn't load habit data yet — it appears after the first sync.";
+});
+</script>
+</body>
+</html>
